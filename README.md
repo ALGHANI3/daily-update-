@@ -1,9 +1,9 @@
-# daily-update-<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Money Tracker</title>
+  <title>Daily Income Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -45,40 +45,50 @@
       margin-top: 20px;
       font-size: 18px;
     }
+    .export-btn {
+      background-color: #028090;
+      color: white;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>Daily Money Tracker</h1>
+  <h1>Daily Income Tracker</h1>
   <div class="container">
-    <label for="amount">Enter Amount (Rs.):</label>
+    <label for="amount">Enter Today's Income (Rs.):</label>
     <input type="number" id="amount" placeholder="e.g. 500">
-    <button onclick="addEntry()">Add Entry</button>
 
-    <h3>Entries:</h3>
+    <button onclick="addEntry()">Add Entry</button>
+    <button class="export-btn" onclick="exportToPDF()">Export PDF Report</button>
+
+    <h3>Daily Entries:</h3>
     <ul id="entryList"></ul>
 
-    <div class="total">Total Saved This Month: Rs. <span id="total">0</span></div>
+    <div class="total">Total This Month: Rs. <span id="total">0</span></div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     const entryList = document.getElementById('entryList');
     const totalDisplay = document.getElementById('total');
 
     function getEntries() {
-      return JSON.parse(localStorage.getItem('moneyEntries') || '[]');
+      return JSON.parse(localStorage.getItem('incomeEntries') || '[]');
     }
 
     function saveEntries(entries) {
-      localStorage.setItem('moneyEntries', JSON.stringify(entries));
+      localStorage.setItem('incomeEntries', JSON.stringify(entries));
     }
 
     function addEntry() {
       const amount = document.getElementById('amount').value;
-      if (!amount) return alert("Please enter an amount.");
+      if (!amount) return alert("Please enter the income amount.");
+
       const date = new Date().toLocaleDateString();
       const entries = getEntries();
       entries.push({ date, amount: parseFloat(amount) });
       saveEntries(entries);
+
       document.getElementById('amount').value = '';
       loadEntries();
     }
@@ -94,6 +104,31 @@
         total += entry.amount;
       });
       totalDisplay.textContent = total;
+    }
+
+    async function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const entries = getEntries();
+
+      let y = 10;
+      doc.setFontSize(16);
+      doc.text("Monthly Income Report", 10, y);
+      y += 10;
+
+      doc.setFontSize(12);
+      let total = 0;
+      entries.forEach(entry => {
+        doc.text(`${entry.date}: Rs. ${entry.amount}`, 10, y);
+        y += 8;
+        total += entry.amount;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text(`Total This Month: Rs. ${total}`, 10, y);
+
+      doc.save("monthly_income_report.pdf");
     }
 
     window.onload = loadEntries;
